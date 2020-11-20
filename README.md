@@ -1,7 +1,7 @@
 # pds_project1
 Parallel and Distributed System's Project 1
 
-### usage
+### Usage
 Clone it inside Docker
 
 Use the command ```$ make ``` to build all or ```$ make (v1 or v2 or v3)``` to build V1, V2 or V3
