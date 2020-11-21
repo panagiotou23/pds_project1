@@ -34,9 +34,9 @@ long find_triangle(){
 
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
-    for(int i=0; i<N; i++){
-        for(int j=0; j<i; j++){
-            for(int k=0; k<j; k++){
+    for(int i=0; i<N-2; i++){
+        for(int j=i+1; j<N-1; j++){
+            for(int k=j+1; k<N; k++){
                 if(A[i][j] == 1 && A[j][k] == 1 && A[i][k] == 1){
                     c[i]++;
                     c[j]++;

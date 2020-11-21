@@ -1,94 +1,22 @@
-#include <iostream>
 #include <sys/time.h>
-
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
 #include "mmio.c"
 
 #include "coo2csc.h"
 
 using namespace std;
 
-//For V1 & V2
-int A[20][20], //the adjacency matrix initially 0
-    c[20],
-    wc[20];
-
-//For V3
 int *I, *J;
+int M, N, nz;
 double *val;
 
-void displayMatrix(int v) {
-   int i, j;
-   for(i = 0; i < v; i++) {
-      for(j = 0; j < v; j++) {
-         cout << A[i][j] << " ";
-      }
-      cout << endl;
-   }
-}
+uint32_t * csc_row,
+         * csc_col;
 
-void add_edge(int u, int v) {       //function to add edge into the matrix
-   A[u][v] = 1;
-   A[v][u] = 1;
-}
-
-long find_triangle(){
-    
-    struct timespec ts_start;
-    struct timespec ts_end;
-
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);
-
-    for(int i=0; i<6; i++){
-        for(int j=0; j<i; j++){
-            for(int k=0; k<j; k++){
-                if(A[i][j] == 1 && A[j][k] == 1 && A[i][k] == 1){
-                    c[i]++;
-                    c[j]++;
-                    c[k]++;
-                    //cout << i << " " << j << " " << k << " \n";
-                }  
-            }
-        }
-    }
-
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-    return (ts_end.tv_nsec - ts_start.tv_nsec);
-    //cout << "\n";
-}
-
-long find_wrong_triangle(){
-
-    struct timespec ts_start;
-    struct timespec ts_end;
-
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);
-    
-    for(int i=0; i<6; i++){
-        for(int j=0; j<6; j++){
-            for(int k=0; k<6; k++){
-                if(A[i][j] == 1 && A[j][k] == 1 && A[i][k] == 1){
-                    wc[i]++;
-                    wc[j]++;
-                    wc[k]++;
-                    //cout << i << " " << j << " " << k << " \n";
-                }  
-            }
-        }
-    }
-
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-    return (ts_end.tv_nsec - ts_start.tv_nsec);
-    //cout << "\n";
-}
-
-int read_mat(int argc, char* argv[]){
-
-    int ret_code;
+int read_mat(int argc, char* argv[]) {
+int ret_code;
     MM_typecode matcode;
-    FILE *f;
-    int M, N, nz;   
+    FILE *f; 
     int i;
 
     if (argc < 2)
@@ -139,7 +67,7 @@ int read_mat(int argc, char* argv[]){
 
     for (i=0; i<nz; i++)
     {
-        fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+        fscanf(f, "%d %d\n", &I[i], &J[i]);// %lg , &val[i]
         I[i]--;  /* adjust from 1-based to 0-based */
         J[i]--;
     }
@@ -153,59 +81,102 @@ int read_mat(int argc, char* argv[]){
     mm_write_banner(stdout, matcode);
     mm_write_mtx_crd_size(stdout, M, N, nz);
     for (i=0; i<nz; i++)
-        fprintf(stdout, "%d %d %20.19g\n", I[i]+1, J[i]+1, val[i]);
-
+        fprintf(stdout, "%d %d %20.19g\n", I[i], J[i], val[i]);
 	return 0;
 }
 
-void read_csc(int argc, char* argv[]){
+long find_triangle(int *c) {
     
+    struct timespec ts_start;
+    struct timespec ts_end;
+    N=0;
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
+    
+    for(int i=0; i<M-2; i++)
+        for(int j=csc_col[i]; j<csc_col[i+1]; j++)
+            for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
+                for(int l=csc_col[i]; l<csc_col[i+1]; l++)
+                    if(csc_row[k] == csc_row[l]){
+                        c[i]++;
+                        c[csc_row[j]]++;
+                        c[csc_row[k]]++;
+                        N++;
+                        //cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
+                    } 
+
+    clock_gettime(CLOCK_MONOTONIC, &ts_end);
+    return (ts_end.tv_nsec - ts_start.tv_nsec);
+    cout << endl << endl;
 }
 
-main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 
+    // Read Matrix
     read_mat(argc, argv);
 
-    const uint32_t nnz = 7;
-    const uint32_t n   = 5;
+    cout<< endl << endl;
 
-    uint32_t * csc_row = (uint32_t *)malloc(nnz     * sizeof(uint32_t));
-    uint32_t * csc_col = (uint32_t *)malloc((n + 1) * sizeof(uint32_t));
+    if(M != N) exit(1);
 
-    // Example from
-    // https://medium.com/swlh/an-in-depth-introduction-to-sparse-matrix-a5972d7e8c86
+    for(int i=0; i<nz; i++)
+        if(I[i] == J[i]) exit(1);
 
-    uint32_t coo_row[7] = {1,2,3,4,5,5,5};
-    uint32_t coo_col[7] = {4,1,3,2,3,4,5};
-    uint32_t isOneBased = 1;
-
-    uint32_t csc_col_gold[6] = {0,1,2,4,6,7};
-    uint32_t csc_row_gold[7] = {1,3,2,4,0,4,4};
+    csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
+    csc_col = (uint32_t *)malloc((M + 1) * sizeof(uint32_t));
 
     // Call coo2csc for isOneBase false
     coo2csc(csc_row, csc_col,
-            coo_row, coo_col,
-            nnz, n,
-            isOneBased);
+            (uint32_t *)I, (uint32_t *)J,
+            nz, M,
+            0);
+
+    /* cleanup variables */
+    free(I);
+    free(J);
 
     // Verify output
-    uint32_t pass = 1;
-    for (int i = 0; i < n + 1; i++) {
-        printf("%d ", csc_col[i]);
-        pass &= (csc_col[i] == csc_col_gold[i]);
+    for (int i = 0; i < M + 1; i++) {
+        //printf("%d ", csc_col[i]);
     }
     printf("\n");
-    for (uint32_t i = 0; i < nnz; i++) {
-        printf("%d ", csc_row[i]);
-        pass &= (csc_row[i] == csc_row_gold[i]);
+    for (int i = 0; i < nz; i++) {
+        //printf("%d ", csc_row[i]);
     }
-    printf("\n");
-    if (pass) printf("Tests: PASSed\n");
-    else      printf("Tests: FAILed\n");
+    
+    cout<< endl << endl;
+    int A[M][M];
+    
+    for(int i=0; i<M; i++){
+        for(int j=0; j<M;j++){
+            A[i][j] = 0;
+        }
+    }
+    for(int i=0; i<M; i++){
+        for(int j=csc_col[i]; j<csc_col[i+1];j++){
+            A[csc_row[j]][i] = 1;
+        }
+    }
 
+    for(int i=0; i<M; i++){
+        for(int j=0; j<M;j++){
+            //cout<<A[i][j]<<" ";
+        }
+        //cout<<endl;
+    }
+
+    int *c = (int *) malloc(M * sizeof(int));
+    
+    for(int i=0; i<M; i++)
+        c[i] = 0;
+
+    long time = find_triangle(c);
+    
+    //for(int i=0; i<M; i++) cout<<c[i]<<" ";
+    
+    cout<<N;
+    cout<<"\nV3: "<<time<<" ns"<<endl;
     /* cleanup variables */
     free( csc_row );
     free( csc_col );
-
-
+    return 0;    
 }
