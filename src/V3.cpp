@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "mmio.c"
 
+#include "coo2csc.h"
+
 using namespace std;
 
 //For V1 & V2
@@ -163,5 +165,47 @@ void read_csc(int argc, char* argv[]){
 main(int argc, char* argv[]) {
 
     read_mat(argc, argv);
+
+    const uint32_t nnz = 7;
+    const uint32_t n   = 5;
+
+    uint32_t * csc_row = (uint32_t *)malloc(nnz     * sizeof(uint32_t));
+    uint32_t * csc_col = (uint32_t *)malloc((n + 1) * sizeof(uint32_t));
+
+    // Example from
+    // https://medium.com/swlh/an-in-depth-introduction-to-sparse-matrix-a5972d7e8c86
+
+    uint32_t coo_row[7] = {1,2,3,4,5,5,5};
+    uint32_t coo_col[7] = {4,1,3,2,3,4,5};
+    uint32_t isOneBased = 1;
+
+    uint32_t csc_col_gold[6] = {0,1,2,4,6,7};
+    uint32_t csc_row_gold[7] = {1,3,2,4,0,4,4};
+
+    // Call coo2csc for isOneBase false
+    coo2csc(csc_row, csc_col,
+            coo_row, coo_col,
+            nnz, n,
+            isOneBased);
+
+    // Verify output
+    uint32_t pass = 1;
+    for (int i = 0; i < n + 1; i++) {
+        printf("%d ", csc_col[i]);
+        pass &= (csc_col[i] == csc_col_gold[i]);
+    }
+    printf("\n");
+    for (uint32_t i = 0; i < nnz; i++) {
+        printf("%d ", csc_row[i]);
+        pass &= (csc_row[i] == csc_row_gold[i]);
+    }
+    printf("\n");
+    if (pass) printf("Tests: PASSed\n");
+    else      printf("Tests: FAILed\n");
+
+    /* cleanup variables */
+    free( csc_row );
+    free( csc_col );
+
 
 }
