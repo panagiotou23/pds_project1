@@ -1,5 +1,5 @@
 /**
- *   \file coo2csc.c
+ *   \file coo2csc.h
  *   \brief An example of COO to CSC matrix conversion
  */
 

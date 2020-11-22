@@ -6,17 +6,20 @@
 
 using namespace std;
 
-int *I, *J;
-int M, N, nz;
-double *val;
+int *I, *J;                     //to store the COO matrix
+double *val;                    //    >>      >>
+int M, N, nz;                   //the number of rows, columns and non-zeros of the Matrix
 
-uint32_t * csc_row,
-         * csc_col;
+int triangles;                  //to store the number of triangles in the Adjacency Matrix
 
+uint32_t *csc_row, *csc_col;    //to store the CSC matrix
+
+//To read the .mtx file
 int read_mat(int argc, char* argv[]) {
-int ret_code;
+    
+    int ret_code;
     MM_typecode matcode;
-    FILE *f; 
+    FILE *f;
     int i;
 
     if (argc < 2)
@@ -24,8 +27,8 @@ int ret_code;
 		fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
 		exit(1);
 	}
-    else    
-    { 
+    else
+    {
         if ((f = fopen(argv[1], "r")) == NULL) 
             exit(1);
     }
@@ -65,11 +68,26 @@ int ret_code;
     /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
     /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
 
+    /* Replace missing val column with 1s and change the fscanf to match patter matrices*/
+
+    if (!mm_is_pattern(matcode))
+    {
     for (i=0; i<nz; i++)
     {
-        fscanf(f, "%d %d\n", &I[i], &J[i]);// %lg , &val[i]
+        fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
         I[i]--;  /* adjust from 1-based to 0-based */
         J[i]--;
+    }
+    }
+    else
+    {
+    for (i=0; i<nz; i++)
+    {
+        fscanf(f, "%d %d\n", &I[i], &J[i]);
+        val[i]=1;
+        I[i]--;  /* adjust from 1-based to 0-based */
+        J[i]--;
+    }
     }
 
     if (f !=stdin) fclose(f);
@@ -81,17 +99,23 @@ int ret_code;
     mm_write_banner(stdout, matcode);
     mm_write_mtx_crd_size(stdout, M, N, nz);
     for (i=0; i<nz; i++)
-        fprintf(stdout, "%d %d %20.19g\n", I[i], J[i], val[i]);
+        fprintf(stdout, "%d %d %20.19g\n", I[i]+1, J[i]+1, val[i]);
+
 	return 0;
 }
 
+//To find the triangles in the Adjacency Matrix, returns the execution run-time
 long find_triangle(int *c) {
     
+    //The Variables used to time the function
     struct timespec ts_start;
     struct timespec ts_end;
-    N=0;
+
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
+    //Initializing the number of triangles
+    triangles=0;
+
     for(int i=0; i<M-2; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
@@ -104,52 +128,65 @@ long find_triangle(int *c) {
                         cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
                     } 
 
+    //Stop the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_end);
+
+    //Return the execution run-time
     return (ts_end.tv_nsec - ts_start.tv_nsec);
-    cout << endl << endl;
 }
 
 int main(int argc, char* argv[]) {
 
-    // Read Matrix
+    //Read the given Matrix
     read_mat(argc, argv);
 
+    //UI Stuff
     cout<< endl << endl;
 
+    //If not Square Matrix return 1
     if(M != N) exit(1);
 
+    //If not Adjacency Matrix return 2
     for(int i=0; i<nz; i++)
-        if(I[i] == J[i]) exit(1);
+        if(I[i] == J[i]) exit(2);
 
+    //The Vetrices of Compressed Sparse Column
     csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
     csc_col = (uint32_t *)malloc((M + 1) * sizeof(uint32_t));
 
-    // Call coo2csc for isOneBase false
+    //The Conversion from COO to CSC
     coo2csc(csc_row, csc_col,
             (uint32_t *)I, (uint32_t *)J,
             nz, M,
             0);
 
-    /* cleanup variables */
+    //Cleanup the COO variables
     free(I);
     free(J);
+    free(val);
     
+    //UI Stuff
     cout<< endl << endl;
 
+    //The Vertex of nodes that stores the triangles
     int *c = (int *) malloc(M * sizeof(int));
-    
+
+    //Initialization of c
     for(int i=0; i<M; i++)
         c[i] = 0;
 
+    //Finding the triangles
     long time = find_triangle(c);
     
-    //for(int i=0; i<M; i++) cout<<c[i]<<" ";
-    
-    cout<<N;
+    //Verifying the output
+    for(int i=0; i<M; i++) cout<<c[i]<<" ";
+    cout<<endl<<triangles<<endl;
+
+    //Printing the time
     cout<<"\nV3: "<<time<<" ns"<<endl;
     
-    /* cleanup variables */
-    free( csc_row );
-    free( csc_col );
+    //Cleanup the CSC variables
+    free(csc_row);
+    free(csc_col);
     return 0;    
 }
