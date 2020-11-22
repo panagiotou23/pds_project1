@@ -116,15 +116,15 @@ long find_triangle(int *c) {
     //Initializing the number of triangles
     triangles=0;
 
-    for(int i=0; i<M-2; i++)
+    for(int i=0; i<M-1; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
-                for(int l=csc_col[i]; l<csc_col[i+1]; l++)
+                for(int l=j+1; l<csc_col[i+1]; l++)
                     if(csc_row[k] == csc_row[l]){
                         c[i]++;
                         c[csc_row[j]]++;
                         c[csc_row[k]]++;
-                        N++;
+                        triangles++;
                         cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
                     } 
 
@@ -140,16 +140,19 @@ int main(int argc, char* argv[]) {
     //Read the given Matrix
     read_mat(argc, argv);
 
-    //UI Stuff
-    cout<< endl << endl;
-
     //If not Square Matrix return 1
-    if(M != N) exit(1);
-
+    if(M != N){
+        cout << "The Matrix given is not an Adjacency Matrix" << endl;
+        exit(1);
+    }
     //If not Adjacency Matrix return 2
-    for(int i=0; i<nz; i++)
-        if(I[i] == J[i]) exit(2);
-
+    for(int i=0; i<nz; i++){
+        if(I[i] == J[i]){ 
+            cout << "The Matrix given is not an Adjacency Matrix" << endl;
+            exit(2);
+        }
+    }
+        
     //The Vetrices of Compressed Sparse Column
     csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
     csc_col = (uint32_t *)malloc((M + 1) * sizeof(uint32_t));
@@ -177,9 +180,22 @@ int main(int argc, char* argv[]) {
 
     //Finding the triangles
     long time = find_triangle(c);
-    
+
+    cout<<endl<<endl;
+
+    for (int i = 0; i < M + 1; i++) {
+        printf("%d ", csc_col[i]);
+    }
+    printf("\n");
+    for (uint32_t i = 0; i < nz; i++) {
+        printf("%d ", csc_row[i]);
+    }
+
+    //UI Stuff
+    cout<< endl << endl<<"c: ";
+
     //Verifying the output
-    for(int i=0; i<M; i++) cout<<c[i]<<" ";
+    for(int i=0; i<M; i++) cout<<"("<<i<<", "<<c[i]<<"), ";
     cout<<endl<<triangles<<endl;
 
     //Printing the time
