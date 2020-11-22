@@ -101,7 +101,7 @@ long find_triangle(int *c) {
                         c[csc_row[j]]++;
                         c[csc_row[k]]++;
                         N++;
-                        //cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
+                        cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
                     } 
 
     clock_gettime(CLOCK_MONOTONIC, &ts_end);
@@ -133,36 +133,8 @@ int main(int argc, char* argv[]) {
     /* cleanup variables */
     free(I);
     free(J);
-
-    // Verify output
-    for (int i = 0; i < M + 1; i++) {
-        //printf("%d ", csc_col[i]);
-    }
-    printf("\n");
-    for (int i = 0; i < nz; i++) {
-        //printf("%d ", csc_row[i]);
-    }
     
     cout<< endl << endl;
-    int A[M][M];
-    
-    for(int i=0; i<M; i++){
-        for(int j=0; j<M;j++){
-            A[i][j] = 0;
-        }
-    }
-    for(int i=0; i<M; i++){
-        for(int j=csc_col[i]; j<csc_col[i+1];j++){
-            A[csc_row[j]][i] = 1;
-        }
-    }
-
-    for(int i=0; i<M; i++){
-        for(int j=0; j<M;j++){
-            //cout<<A[i][j]<<" ";
-        }
-        //cout<<endl;
-    }
 
     int *c = (int *) malloc(M * sizeof(int));
     
@@ -175,6 +147,7 @@ int main(int argc, char* argv[]) {
     
     cout<<N;
     cout<<"\nV3: "<<time<<" ns"<<endl;
+    
     /* cleanup variables */
     free( csc_row );
     free( csc_col );
