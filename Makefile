@@ -1,4 +1,4 @@
-CC=g++
+CC=gcc
 MPICC=mpicc
 CILKCC=/usr/local/OpenCilk-9.0.1-Linux/bin/clang
 CFLAGS=-O3
@@ -16,7 +16,10 @@ V2:
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/v2 $(SRC_DIR)/V2.cpp
 
 V3:
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/v3 $(SRC_DIR)/V3.cpp 
+	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/v3 $(SRC_DIR)/V3.c -fcilkplus
+
+V3_check:
+	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/v3 $(SRC_DIR)/V3.c -fcilkplus -fsanitize=cilk
 
 .PHONY: clean
 
