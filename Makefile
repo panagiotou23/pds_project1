@@ -15,15 +15,18 @@ V1:
 V2:
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/v2 $(SRC_DIR)/V2.cpp
 
-V3:
-	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/v3 $(SRC_DIR)/V3.c -fcilkplus
+V3_cilk:
+	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/V3_cilk $(SRC_DIR)/V3_cilk.c -fcilkplus
+	
+V3_check_cilk:
+	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/V3_check_cilk $(SRC_DIR)/V3_cilk.c -fcilkplus -fsanitize=cilk
 
-V3_check:
-	$(CILKCC) $(CFLAGS) -o $(BIN_DIR)/v3 $(SRC_DIR)/V3.c -fcilkplus -fsanitize=cilk
+V3_openmp:
+	$(CC) $(CFLAGS) -o $(BIN_DIR)/V3_openmp $(SRC_DIR)/V3_openmp.c -fopenmp
 
 .PHONY: clean
 
-all: V1 V2 V3
+all: V3_cilk V3_openmp
 
 clean:
 	rm -rf $(BIN_DIR)
