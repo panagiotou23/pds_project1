@@ -33,7 +33,8 @@ long find_triangle(){
     struct timespec ts_end;
 
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
-    
+
+
     for(int i=0; i<N-2; i++){
         for(int j=1; j<N-1; j++){
             for(int k=2; k<N; k++){
