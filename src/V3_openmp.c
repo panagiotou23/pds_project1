@@ -5,7 +5,6 @@
 #include "coo2csc.h"
 
 #include <omp.h>
-#define CHUNKSIZE 100
 
 int *I, *J;                     //to store the COO matrix
 double *val;                    //    >>      >>
@@ -117,7 +116,6 @@ long find_triangle(int *c) {
 
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
-
     for(int i=0; i<M-1; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
@@ -127,14 +125,13 @@ long find_triangle(int *c) {
                         c[csc_row[j]]++;
                         c[csc_row[k]]++;
                         triangles++;
-                        //cout<<i<<" "<< csc_row[j]<<" "<<csc_row[k]<<endl;
                     } 
 
     //Stop the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_end);
 
     //Return the execution run-time
-    return (ts_end.tv_nsec - ts_start.tv_nsec);
+    return (ts_end.tv_sec - ts_start.tv_sec)* 1000000 + (ts_end.tv_nsec - ts_start.tv_nsec)/ 1000;    
 }
 
 //Find triangles with OpenCilk
@@ -143,9 +140,7 @@ long find_triangle_openmp(int *c) {
     //Initializing the number of triangles
     triangles=0;
 
-    int i,j,k,l,tid,nthreads;
-
-    int chunk = CHUNKSIZE;
+    int i,j,k,l;
 
     //The Variables used to time the function
     struct timespec ts_start;
@@ -153,9 +148,9 @@ long find_triangle_openmp(int *c) {
 
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
-    #pragma omp parallel shared(c, nthreads, chunk) private(tid, i, j, k, l) reduction(+:triangles)
+    #pragma omp parallel shared(csc_row, csc_col) private(i, j, k, l) reduction(+:c[:M]) reduction(+:triangles)
     {
-        #pragma omp for schedule(static,chunk) nowait
+        #pragma omp for schedule(static, 100) nowait
         for(i=0; i<M-1; i++){
             for(j=csc_col[i]; j<csc_col[i+1]; j++){
                 for(k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++){ 
@@ -176,7 +171,7 @@ long find_triangle_openmp(int *c) {
     clock_gettime(CLOCK_MONOTONIC, &ts_end);
 
     //Return the execution run-time
-    return (ts_end.tv_nsec - ts_start.tv_nsec);
+    return (ts_end.tv_sec - ts_start.tv_sec)* 1000000 + (ts_end.tv_nsec - ts_start.tv_nsec)/ 1000;
 }
 
 int main(int argc, char* argv[]) {
@@ -185,9 +180,16 @@ int main(int argc, char* argv[]) {
     read_mat(argc, argv);
 
     //If not Square Matrix return 1
-    if(M != N) exit(1);
+    if(M != N){
+        printf("Not Square Matrix\n");
+        exit(1);
+    }
     //If not Adjacency Matrix return 2
-    for(int i=0; i<nz; i++) if(I[i] == J[i]) exit(2);
+    for(int i=0; i<nz; i++) 
+        if(I[i] == J[i]) {
+            printf("%d %d Not Adjacency Matrix\n", J[i], I[i]);
+            exit(2);
+        }
         
     //The Vetrices of Compressed Sparse Column
     csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
@@ -213,14 +215,24 @@ int main(int argc, char* argv[]) {
 
     // //Finding the triangles
     long seq_time = find_triangle(c);
-    printf("V3: %ld\n", seq_time);
+    printf("V3: %ld us\n", seq_time);
     printf("%d\n\n", triangles);
 
-    long openmp_time = find_triangle_openmp(c);
-    printf("V3 Cilk: %ld\n", openmp_time);
+    int *c_ = (int *) malloc(M * sizeof(int));
+
+    //Initialization of c
+    for(int i=0; i<M; i++)
+        c_[i] = 0;
+
+    long openmp_time = find_triangle_openmp(c_);
+    printf("V3 Cilk: %ld us\n", openmp_time);
     printf("%d\n\n", triangles);
 
     printf("%lf%\n",100*(double)(seq_time-openmp_time)/seq_time);
+
+    for(int i=0; i<M; i++)
+        if(c[i] != c_[i])
+            printf("NNNNNNNNNNNOOOOOOOOOOOOOOOOOOOOOOO\n");
 
     //Cleanup the CSC variables
     free(csc_row);
