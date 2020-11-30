@@ -1,6 +1,6 @@
 #include <time.h>
 
-long v4(    int  * row, int * col, int * val, 
+long v4(    int  * row, int * col, 
             float * c, int M, int nz)
 {
 

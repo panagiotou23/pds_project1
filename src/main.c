@@ -14,7 +14,6 @@
 #include "coo2csc.h"
 
 int *I, *J;                     //to store the COO matrix
-int *val;                    //    >>      >>
 int M, N, nz;                   //the number of rows, columns and non-zeros of the Matrix
 
 
@@ -34,6 +33,7 @@ int read_mat(int argc, char* argv[]) {
     MM_typecode matcode;
     FILE *f;
     int i;
+    int *val;
 
     if (argc < 2)
 	{
@@ -148,10 +148,6 @@ int main(int argc, char* argv[]) {
     uint32_t * csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
     uint32_t * csc_col = (uint32_t *)malloc((M + 1) * sizeof(uint32_t));
 
-    //Every value is equal to 1 since it is an Adjacency of an Undirected Unweighted Graph
-    int * csc_val = (int *)malloc(nz * sizeof(int));
-    for(int i=0;i<nz; i++) csc_val[i] = 1;
-    
     //The Conversion from COO to CSC
     coo2csc(csc_row, csc_col,
             (uint32_t *)I_, (uint32_t *)J_,
@@ -168,7 +164,6 @@ int main(int argc, char* argv[]) {
     free(J);
     free(I_);
     free(J_);
-    free(val);
 
     //Getting the number of threads
     int num_threads = 8;
@@ -194,13 +189,13 @@ int main(int argc, char* argv[]) {
     int * c_ = (int *) malloc(M * sizeof(int));
 
 
-    // //Running V3
-    // long v3_time = v3(  csc_row, csc_col,
-    //                     c_, M);
+    //Running V3
+    long v3_time = v3(  csc_row, csc_col,
+                        c_, M);
 
-    // int v3_sum = 0;
-    // for(int i=0; i<M; i++) v3_sum += c_[i];
-    // printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
+    int v3_sum = 0;
+    for(int i=0; i<M; i++) v3_sum += c_[i];
+    printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
 
 
     //Running V3 with Cilk
@@ -222,7 +217,7 @@ int main(int argc, char* argv[]) {
 
 
     //Running V4 
-    long v4_time = v4(  csc_row, csc_col, csc_val,
+    long v4_time = v4(  csc_row, csc_col,
                         c, M, nz);
 
     int v4_sum = 0;
@@ -249,7 +244,7 @@ int main(int argc, char* argv[]) {
     
 
     //Running V4 with Pthreads
-    long v4_threads = v4_pthreads(  csc_row, csc_col, csc_val,
+    long v4_threads = v4_pthreads(  csc_row, csc_col,
                                     c, M, nz, num_threads);
 
     int v4_threads_sum = 0;
