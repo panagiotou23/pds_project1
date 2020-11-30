@@ -1,6 +1,6 @@
 #include <time.h>
 
-//To find the triangles in the Adjacency Matrix, returns the execution run-time
+//Finds the triangles in the Adjacency Matrix stores them in c vector, returns the execution run-time
 long v3(    int * csc_row, int * csc_col,
             int * c, int M) 
 {
@@ -11,8 +11,10 @@ long v3(    int * csc_row, int * csc_col,
     //Initialization of c
     for(int i=0; i<M; i++) c[i] = 0;
 
+    //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
+    //Find the triangles and store them in c
     for(int i=0; i<M; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)

@@ -2,7 +2,7 @@
 
 #include <cilk/cilk.h>
 
-long v4_cilk(   int  * row, int * col, int * val, 
+long v4_cilk(   int  * row, int * col, 
                 float * c, int M, int nz)
 {
 
@@ -10,17 +10,20 @@ long v4_cilk(   int  * row, int * col, int * val,
     struct timespec ts_start;
     struct timespec ts_end;
 
+    //Initialization of c
     for(int i=0; i<M; i++) c[i] = 0;
 
+    //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
+    //Parallelizing the first for with Cilk
     cilk_for(int i=0; i<M; i++){
         for(int j=col[i]; j<col[i+1]; j++){
             int k=col[i];
             int l=col[row[j]];
             while(k<col[i+1] && l< col[row[j] +1]){
                 if(row[l] == row[k]){
-                    c[i] += (float)val[j]/2;
+                    c[i] += 0.5;
                     k++;
                     l++; 
                 }else if(row[l] > row[k]){

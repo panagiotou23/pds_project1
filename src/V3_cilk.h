@@ -13,8 +13,10 @@ long v3_cilk(    int * csc_row, int * csc_col,
     //Initialization of c
     for(int i=0; i<M; i++) c[i] = 0;
 
+    //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
+    //Parallelizing the first for with Cilk
     cilk_for(int i=0; i<M; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)

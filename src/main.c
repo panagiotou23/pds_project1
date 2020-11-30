@@ -117,7 +117,6 @@ int read_mat(int argc, char* argv[]) {
 	return 0;
 }
 
-/*******************FIX V3*********************************/
 
 int main(int argc, char* argv[]) {
     
@@ -129,9 +128,11 @@ int main(int argc, char* argv[]) {
     //If not Adjacency Matrix return 2
     for(int i=0; i<nz; i++) if(I[i] == J[i]) exit(2);
 
+    //In order to convert the Triangular Matrix into Symmetric
     int * I_ = (int *)malloc(2*nz * sizeof(int));
     int * J_ = (int *)malloc(2*nz * sizeof(int));
 
+    //Add the symmetric elements in the COO format
     for(int i=0; i<nz; i++){
         I_[i] = I[i];
         I_[nz + i] = J[i];
@@ -140,12 +141,14 @@ int main(int argc, char* argv[]) {
         J_[nz + i] = I[i];
     }
 
+    //The Non-Zero Elements are doubled
     nz *= 2;
             
     //The Vetrices of Compressed Sparse Column
     uint32_t * csc_row = (uint32_t *)malloc(nz     * sizeof(uint32_t));
     uint32_t * csc_col = (uint32_t *)malloc((M + 1) * sizeof(uint32_t));
 
+    //Every value is equal to 1 since it is an Adjacency of an Undirected Unweighted Graph
     int * csc_val = (int *)malloc(nz * sizeof(int));
     for(int i=0;i<nz; i++) csc_val[i] = 1;
     
@@ -155,6 +158,7 @@ int main(int argc, char* argv[]) {
             nz, M,
             0);
 
+    //Sorting the CSC Matrix
     for(int i=0; i<M; i++){
         qsort ((csc_row+csc_col[i]), csc_col[i+1] - csc_col[i], sizeof(int), comp);
     }
@@ -190,14 +194,16 @@ int main(int argc, char* argv[]) {
     int * c_ = (int *) malloc(M * sizeof(int));
 
 
-    long v3_time = v3(  csc_row, csc_col,
-                        c_, M);
+    // //Running V3
+    // long v3_time = v3(  csc_row, csc_col,
+    //                     c_, M);
 
-    int v3_sum = 0;
-    for(int i=0; i<M; i++) v3_sum += c_[i];
-    printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
+    // int v3_sum = 0;
+    // for(int i=0; i<M; i++) v3_sum += c_[i];
+    // printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
 
 
+    //Running V3 with Cilk
     long v3_cilk_time = v3_cilk(    csc_row, csc_col,
                                     c_, M);
 
@@ -206,6 +212,7 @@ int main(int argc, char* argv[]) {
     printf("Cilk V3: %ld us or %f s\nTriangles: %d\n\n", v3_cilk_time, (float)v3_cilk_time*1e-6, v3_cilk_sum);
 
 
+    //Running V3 with OpenMP
     long v3_omp_time = v3_cilk( csc_row, csc_col,
                                 c_, M);
 
@@ -214,46 +221,46 @@ int main(int argc, char* argv[]) {
     printf("OpenMP V3: %ld us or %f s\nTriangles: %d\n\n", v3_omp_time, (float)v3_omp_time*1e-6, v3_omp_sum);
 
 
+    //Running V4 
     long v4_time = v4(  csc_row, csc_col, csc_val,
                         c, M, nz);
 
     int v4_sum = 0;
     for(int i=0; i<M; i++) v4_sum += (int)c[i];
-
     printf("V4: %ld us or %f s\nTriangles: %d\n\n",v4_time, (float)v4_time*1e-6,v4_sum);
 
 
-    long v4_omp = v4_openmp(    csc_row, csc_col, csc_val,
-                                c, M, nz);
-
-    int v4_omp_sum = 0;
-    for(int i=0; i<M; i++) v4_omp_sum += (int)c[i];
-
-    printf("OpenMP V4: %ld us or %f s\nTriangles: %d\n\n", v4_omp, (float)v4_omp*1e-6, v4_omp_sum);
-    
-
-    long v4_cilk_time = v4_cilk( csc_row, csc_col, csc_val,
+    //Running V4 with Cilk
+    long v4_cilk_time = v4_cilk( csc_row, csc_col,
                             c, M, nz);
 
     int v4_cilk_sum = 0;
     for(int i=0; i<M; i++) v4_cilk_sum += (int)c[i];
-
     printf("Cilk V4: %ld us or %f s\nTriangles: %d\n\n", v4_cilk_time, v4_cilk_time*1e-6, v4_cilk_sum);
 
-    for(int i=0; i<M; i++) if(c[i] != c_[i]) printf("Wrong at %d\n%f\t%d\n", i, c[i], c_[i]);
 
+    //Running V4 with OpenMP
+    long v4_omp = v4_openmp(    csc_row, csc_col,
+                                c, M, nz);
+
+    int v4_omp_sum = 0;
+    for(int i=0; i<M; i++) v4_omp_sum += (int)c[i];
+    printf("OpenMP V4: %ld us or %f s\nTriangles: %d\n\n", v4_omp, (float)v4_omp*1e-6, v4_omp_sum);
+    
+
+    //Running V4 with Pthreads
     long v4_threads = v4_pthreads(  csc_row, csc_col, csc_val,
                                     c, M, nz, num_threads);
 
-
     int v4_threads_sum = 0;
     for(int i=0; i<M; i++) v4_threads_sum += (int)c[i];
-
     printf("PThreads V4: %ld us or %f s\nTriangles: %d\n\n", v4_threads, v4_threads*1e-6, v4_threads_sum);
     
-    //Cleanup the CSC variables
+    //Cleanup the rest of the variables
     free(csc_row);
     free(csc_col);
     free(c);
+    free(c_);
+
     return 0;    
 }

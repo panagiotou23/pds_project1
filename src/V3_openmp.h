@@ -14,12 +14,16 @@ long v3_openmp(  int * csc_col, int * csc_row,
     //Initialization of c
     for(int i=0; i<M; i++) c[i] = 0;
 
+    //Declaring the private variables of the OpenMP Parallelization
     int i,j,k,l;
 
+    //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
+    //Starting the OpenMP Parallelization
     #pragma omp parallel shared(csc_row, csc_col) private(i, j, k, l)
     {
+        //Parallelizing for
         #pragma omp for schedule(dynamic)
         for(i=0; i<M; i++){
             for(j=csc_col[i]; j<csc_col[i+1]; j++){
