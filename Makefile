@@ -7,9 +7,9 @@ BIN_DIR=bin
 SRC_DIR=src
 $(info $(shell mkdir -p $(BIN_DIR)))
 
-default: test
+default: main
 
-test:
+main:
 	$(CC) $(CFLAGS) -o $(BIN_DIR)/test $(SRC_DIR)/main.c -fcilkplus -fopenmp -lpthread
 
 .PHONY: clean
