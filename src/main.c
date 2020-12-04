@@ -13,18 +13,10 @@
 #include "mmio.c"
 #include "coo2csc.h"
 
+#include "comp.h"
+
 int *I, *J;                     //to store the COO matrix
 int M, N, nz;                   //the number of rows, columns and non-zeros of the Matrix
-
-
-int comp (const void * elem1, const void * elem2) 
-{
-    int f = *((int*)elem1);
-    int s = *((int*)elem2);
-    if (f > s) return  1;
-    if (f < s) return -1;
-    return 0;
-}
 
 //To read the .mtx file
 int read_mat(int argc, char* argv[]) {
@@ -117,7 +109,6 @@ int read_mat(int argc, char* argv[]) {
 	return 0;
 }
 
-
 int main(int argc, char* argv[]) {
     
     //Read the given Matrix
@@ -184,7 +175,7 @@ int main(int argc, char* argv[]) {
         __cilkrts_init();
     }
 
-    //The Vertex of nodes that stores the triangles
+    //The Vector of nodes that stores the triangles
     float * c = (float *) malloc(M * sizeof(float));
     int * c_ = (int *) malloc(M * sizeof(int));
 
@@ -198,6 +189,7 @@ int main(int argc, char* argv[]) {
     printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
 
 
+
     //Running V3 with Cilk
     long v3_cilk_time = v3_cilk(    csc_row, csc_col,
                                     c_, M);
@@ -208,8 +200,8 @@ int main(int argc, char* argv[]) {
 
 
     //Running V3 with OpenMP
-    long v3_omp_time = v3_cilk( csc_row, csc_col,
-                                c_, M);
+    long v3_omp_time = v3_openmp(   csc_row, csc_col,
+                                    c_, M);
 
     int v3_omp_sum = 0;
     for(int i=0; i<M; i++) v3_omp_sum += c_[i];
@@ -226,8 +218,8 @@ int main(int argc, char* argv[]) {
 
 
     //Running V4 with Cilk
-    long v4_cilk_time = v4_cilk( csc_row, csc_col,
-                            c, M, nz);
+    long v4_cilk_time = v4_cilk(    csc_row, csc_col,
+                                    c, M, nz);
 
     int v4_cilk_sum = 0;
     for(int i=0; i<M; i++) v4_cilk_sum += (int)c[i];
@@ -241,7 +233,7 @@ int main(int argc, char* argv[]) {
     int v4_omp_sum = 0;
     for(int i=0; i<M; i++) v4_omp_sum += (int)c[i];
     printf("OpenMP V4: %ld us or %f s\nTriangles: %d\n\n", v4_omp, (float)v4_omp*1e-6, v4_omp_sum);
-    
+
 
     //Running V4 with Pthreads
     long v4_threads = v4_pthreads(  csc_row, csc_col,
@@ -250,7 +242,8 @@ int main(int argc, char* argv[]) {
     int v4_threads_sum = 0;
     for(int i=0; i<M; i++) v4_threads_sum += (int)c[i];
     printf("PThreads V4: %ld us or %f s\nTriangles: %d\n\n", v4_threads, v4_threads*1e-6, v4_threads_sum);
-    
+            
+
     //Cleanup the rest of the variables
     free(csc_row);
     free(csc_col);

@@ -1,4 +1,7 @@
 #include <time.h>
+#include <stdio.h>
+
+#include "binarySearch.h"
 
 //Finds the triangles in the Adjacency Matrix stores them in c vector, returns the execution run-time
 long v3(    int * csc_row, int * csc_col,
@@ -14,15 +17,11 @@ long v3(    int * csc_row, int * csc_col,
     //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
     
-    //Find the triangles and store them in c
+    // Find the triangles and store them in c
     for(int i=0; i<M; i++)
         for(int j=csc_col[i]; j<csc_col[i+1]; j++)
             for(int k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
-                for(int l=j+1; l<csc_col[i+1]; l++)
-                    if(csc_row[k] == csc_row[l])
-                        c[i]++;
-                    
-                        
+                if(binarySearch(csc_row, j+1, csc_col[i+1] - 1, csc_row[k]) != -1) c[i]++;
 
     //Stop the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_end);

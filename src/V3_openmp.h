@@ -1,5 +1,6 @@
 #include <time.h>
 
+
 //Finds the triangles in the Adjacency Matrix stores them in c vector, returns the execution run-time
 long v3_openmp(    int * csc_row, int * csc_col,
             int * c, int M) 
@@ -24,9 +25,8 @@ long v3_openmp(    int * csc_row, int * csc_col,
         for(i=0; i<M; i++)
             for(j=csc_col[i]; j<csc_col[i+1]; j++)
                 for(k=csc_col[csc_row[j]]; k<csc_col[csc_row[j] + 1]; k++)
-                    for(l=j+1; l<csc_col[i+1]; l++)
-                        if(csc_row[k] == csc_row[l])
-                            c[i]++;
+                    if(binarySearch(csc_row, j+1, csc_col[i+1] - 1, csc_row[k]) != -1) c[i]++;
+
                         
                         
     }           
