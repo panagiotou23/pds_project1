@@ -4,12 +4,15 @@
 
 //Create a struct in order to pass multiple arguments
 struct csc{
-    int start,  //the start of the first loop
-        stop,   //the end of the first loop
+    int i,      //the first loop index
+        M,      //the size of the matrix
         * row,  //the CSC row vector
         * col;  //the CSC column vector
     float * c;  //the node vector that stores the triangles
 };
+
+//Using a mutex in order to avoid racing conditions
+pthread_mutex_t m;
 
 //Pthread's function
 void* find(void* arg){
@@ -17,8 +20,19 @@ void* find(void* arg){
     //Storing the argument in a variable
     struct csc * s = (struct csc * ) arg;
 
-    //Using the same loop as V4 with different columns for each thread
-    for(int i=s->start; i<s->start+s->stop; i++){
+    //A local variable to store the index of the first loop
+    int i=0;
+    
+    while(1){
+        //Storing the index 
+        pthread_mutex_lock(&m);
+        i = s->i++;
+        pthread_mutex_unlock(&m);
+
+        //Breaking the loop if it exceeds the size of the array
+        if(i >= s->M) break;
+        
+        //Using the same loop as V4
         for(int j=s->col[i]; j<s->col[i+1]; j++){
             int k=s->col[i];
             int l=s->col[s->row[j]];
@@ -34,9 +48,12 @@ void* find(void* arg){
                 }
             }
         }
+   
     }
     return NULL;
+
 }
+
 
 long v4_pthreads(   int  * row, int * col,
                     float * c, int M, int nz, 
@@ -53,40 +70,22 @@ long v4_pthreads(   int  * row, int * col,
     //Creating the thread array
     pthread_t threads[num_threads];
     
-    //Creating the struct array
-    struct csc s[num_threads];
+    //Creating the struct
+    struct csc s;
+    s.c = c;
+    s.row = row;
+    s.col = col;
+    s.i = 0;
+    s.M = M;
+
+    //Initializing the mutex
+    pthread_mutex_init(&m, NULL);
 
     //Start the clock
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
-    //Initializing the struct array
-    if(M%num_threads == 0){                     //If the number of Columns is multiple to the number of threads 
-        for(int i=0; i<num_threads; i++){
-            s[i].c = c;
-            s[i].row = row;
-            s[i].col = col;
-            s[i].stop = (M/num_threads);
-            s[i].start = (M/num_threads)*i;
-            
-        }    
-    }else{                                      //If not the residual will fall to the last thread
-        for(int i=0; i<num_threads-1; i++){
-            s[i].c = c;
-            s[i].row = row;
-            s[i].col = col;
-            s[i].stop = (M/num_threads);
-            s[i].start = (M/num_threads)*i;
-            
-        }
-        s[num_threads - 1].c = c;
-        s[num_threads - 1].row = row;
-        s[num_threads - 1].col = col;
-        s[num_threads - 1].start = (M/num_threads)*(num_threads - 1);
-        s[num_threads - 1].stop = (M/num_threads) + M%num_threads;        
-    }
-
     //Starting the threads
-    for(int i=0; i<num_threads; i++) pthread_create(&threads[i], NULL, find, &s[i]);
+    for(int i=0; i<num_threads; i++) pthread_create(&threads[i], NULL, find, &s);
 
     //And waiting for the threads to finish
     for(int i=0; i<num_threads; i++) pthread_join(threads[i], NULL);
