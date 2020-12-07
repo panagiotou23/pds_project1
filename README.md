@@ -18,7 +18,7 @@ Run the program with the default number of threads with
  ```sh
  ./test path/to/matrix
  ``` 
- Or run with controlled number of threads with 
+ Or Run with controlled number of threads with 
  ```sh
  ./main path/to/.mtx_file num_of_threads
  ``` 
