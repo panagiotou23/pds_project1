@@ -16,7 +16,7 @@ Use the Makefile to build the main executable with
  ```
 Run the program with the default number of threads with
  ```sh
- ./main path/to/matrix
+ ./test path/to/matrix
  ``` 
  or to control the number of threads with 
  ```sh
