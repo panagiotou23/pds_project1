@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 
     int v3_sum = 0;
     for(int i=0; i<M; i++) v3_sum += c_[i];
-    printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum);
+    printf("V3: %ld us or %f s\nTriangles: %d\n\n", v3_time, (float)v3_time*1e-6, v3_sum/3);
 
 
 
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 
     int v3_cilk_sum = 0;
     for(int i=0; i<M; i++) v3_cilk_sum += c_[i];
-    printf("Cilk V3: %ld us or %f s\nTriangles: %d\n\n", v3_cilk_time, (float)v3_cilk_time*1e-6, v3_cilk_sum);
+    printf("Cilk V3: %ld us or %f s\nTriangles: %d\n\n", v3_cilk_time, (float)v3_cilk_time*1e-6, v3_cilk_sum/3);
 
 
     //Running V3 with OpenMP
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 
     int v3_omp_sum = 0;
     for(int i=0; i<M; i++) v3_omp_sum += c_[i];
-    printf("OpenMP V3: %ld us or %f s\nTriangles: %d\n\n", v3_omp_time, (float)v3_omp_time*1e-6, v3_omp_sum);
+    printf("OpenMP V3: %ld us or %f s\nTriangles: %d\n\n", v3_omp_time, (float)v3_omp_time*1e-6, v3_omp_sum/3);
 
 
     //Running V4 
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
 
     int v4_sum = 0;
     for(int i=0; i<M; i++) v4_sum += (int)c[i];
-    printf("V4: %ld us or %f s\nTriangles: %d\n\n",v4_time, (float)v4_time*1e-6,v4_sum);
+    printf("V4: %ld us or %f s\nTriangles: %d\n\n",v4_time, (float)v4_time*1e-6,v4_sum/3);
 
 
     //Running V4 with Cilk
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 
     int v4_cilk_sum = 0;
     for(int i=0; i<M; i++) v4_cilk_sum += (int)c[i];
-    printf("Cilk V4: %ld us or %f s\nTriangles: %d\n\n", v4_cilk_time, v4_cilk_time*1e-6, v4_cilk_sum);
+    printf("Cilk V4: %ld us or %f s\nTriangles: %d\n\n", v4_cilk_time, v4_cilk_time*1e-6, v4_cilk_sum/3);
 
 
     //Running V4 with OpenMP
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
 
     int v4_omp_sum = 0;
     for(int i=0; i<M; i++) v4_omp_sum += (int)c[i];
-    printf("OpenMP V4: %ld us or %f s\nTriangles: %d\n\n", v4_omp, (float)v4_omp*1e-6, v4_omp_sum);
+    printf("OpenMP V4: %ld us or %f s\nTriangles: %d\n\n", v4_omp, (float)v4_omp*1e-6, v4_omp_sum/3);
 
 
     //Running V4 with Pthreads
@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
 
     int v4_threads_sum = 0;
     for(int i=0; i<M; i++) v4_threads_sum += (int)c[i];
-    printf("PThreads V4: %ld us or %f s\nTriangles: %d\n\n", v4_threads, v4_threads*1e-6, v4_threads_sum);
+    printf("PThreads V4: %ld us or %f s\nTriangles: %d\n\n", v4_threads, v4_threads*1e-6, v4_threads_sum/3);
             
 
     //Cleanup the rest of the variables
